@@ -7,10 +7,12 @@ import (
 	"net/http"
 )
 
+// Struct used for managing ADSBridge with its address addr
 type ADSBridge struct {
 	addr string
 }
 
+// Creates instance of type ADSBridge with given address and checks connection, returns ADSBridge and error if connection fails.
 func Connect(addr string) (ADSBridge, error) {
 	var b ADSBridge
 	b.addr = addr
@@ -21,6 +23,7 @@ func Connect(addr string) (ADSBridge, error) {
 	return b, nil
 }
 
+// Reads and converts JSON response of ADSBridge
 func processResponse(r io.Reader) (map[string]interface{}, error) {
 	body, err := io.ReadAll(r)
 	if err != nil {
@@ -33,6 +36,7 @@ func processResponse(r io.Reader) (map[string]interface{}, error) {
 	return dat, nil
 }
 
+// Performs GET request with ADSBridge, converts and returns result
 func (b ADSBridge) Get(path string) (map[string]interface{}, error) {
 	var url = b.addr + path
 	resp, err := http.Get(url)
@@ -43,6 +47,7 @@ func (b ADSBridge) Get(path string) (map[string]interface{}, error) {
 	return processResponse(resp.Body)
 }
 
+// Performs POST request with ADSBridge, converts and returns result
 func (b ADSBridge) Post(path string, jsonStr string) (map[string]interface{}, error) {
 	var url = b.addr + path
 	resp, err := http.Post(url, "text/json", bytes.NewBufferString(jsonStr))
