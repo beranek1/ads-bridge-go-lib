@@ -79,6 +79,10 @@ func (b ADSBridge) GetSymbolValue(name string) (map[string]interface{}, error) {
 	return b.Get("/getSymbolValue/" + name)
 }
 
+func (b ADSBridge) ListSymbols() (map[string]interface{}, error) {
+	return b.Get("/symbolList")
+}
+
 func (b ADSBridge) SetSymbolValue(name string, value string) (map[string]interface{}, error) {
 	return b.Post("/setSymbolValue/"+name, "{\"data\":"+value+"}")
 }
