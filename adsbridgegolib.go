@@ -83,8 +83,12 @@ func (b ADSBridge) ListSymbols() (map[string]interface{}, error) {
 	return b.Get("/symbolList")
 }
 
-func (b ADSBridge) SetSymbolValue(name string, value string) (map[string]interface{}, error) {
-	return b.Post("/setSymbolValue/"+name, "{\"data\":"+value+"}")
+func (b ADSBridge) SetSymbolValue(name string, value any) (map[string]interface{}, error) {
+	jsonValue, err := json.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+	return b.Post("/setSymbolValue/"+name, "{\"data\":"+string(jsonValue)+"}")
 }
 
 func (b ADSBridge) WriteControl(adsState uint16, deviceState uint16) (map[string]interface{}, error) {
