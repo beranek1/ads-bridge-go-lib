@@ -3,6 +3,7 @@ package adsbridgegolib
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -85,12 +86,12 @@ func (b ADSBridge) SetSymbolValue(name string, value string) (map[string]interfa
 func (b ADSBridge) WriteControl(adsState uint16, deviceState uint16) (map[string]interface{}, error) {
 	if adsState != 0 {
 		if deviceState != 0 {
-			return b.Post("/writeControl", "{\"adsState\":"+string(adsState)+","+"\"deviceState\":"+string(deviceState)+"}")
+			return b.Post("/writeControl", "{\"adsState\":"+fmt.Sprint(adsState)+","+"\"deviceState\":"+fmt.Sprint(deviceState)+"}")
 		} else {
-			return b.Post("/writeControl", "{\"adsState\":"+string(adsState)+"}")
+			return b.Post("/writeControl", "{\"adsState\":"+fmt.Sprint(adsState)+"}")
 		}
 	} else if deviceState != 0 {
-		return b.Post("/writeControl", "{\"deviceState\":"+string(deviceState)+"}")
+		return b.Post("/writeControl", "{\"deviceState\":"+fmt.Sprint(deviceState)+"}")
 	}
 	return b.Post("/writeControl", "{}")
 }
