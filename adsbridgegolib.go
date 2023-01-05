@@ -3,9 +3,10 @@ package adsbridgegolib
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/beranek1/goadsinterface"
 )
 
 // Struct used for managing ADSBridge with its address addr
@@ -25,81 +26,103 @@ func Connect(addr string) (ADSBridge, error) {
 }
 
 // Reads and converts JSON response of ADSBridge
-func processResponse(r io.Reader) (map[string]interface{}, error) {
+func processResponse(r io.Reader, data any) error {
 	body, err := io.ReadAll(r)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	var dat map[string]interface{}
-	if err := json.Unmarshal(body, &dat); err != nil {
-		return nil, err
-	}
-	return dat, nil
+	return json.Unmarshal(body, data)
 }
 
 // Performs GET request with ADSBridge, converts and returns result
-func (b ADSBridge) Get(path string) (map[string]interface{}, error) {
+func (b ADSBridge) Get(path string, data any) error {
 	var url = b.addr + path
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
-	return processResponse(resp.Body)
+	return processResponse(resp.Body, data)
 }
 
 // Performs POST request with ADSBridge, converts and returns result
-func (b ADSBridge) Post(path string, jsonStr string) (map[string]interface{}, error) {
+func (b ADSBridge) Post(path string, jsonStr string, data any) error {
 	var url = b.addr + path
 	resp, err := http.Post(url, "text/json", bytes.NewBufferString(jsonStr))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer resp.Body.Close()
-	return processResponse(resp.Body)
+	return processResponse(resp.Body, data)
 }
 
-func (b ADSBridge) GetVersion() (map[string]interface{}, error) {
-	return b.Get("/version")
+func (b ADSBridge) GetVersion() (goadsinterface.AdsVersion, error) {
+	var data goadsinterface.AdsVersion
+	err := b.Get("/version", &data)
+	return data, err
 }
 
-func (b ADSBridge) GetState() (map[string]interface{}, error) {
-	return b.Get("/state")
+func (b ADSBridge) GetState() (goadsinterface.AdsState, error) {
+	var data goadsinterface.AdsState
+	err := b.Get("/state", &data)
+	return data, err
 }
 
-func (b ADSBridge) GetDeviceInfo() (map[string]interface{}, error) {
-	return b.Get("/deviceInfo")
+func (b ADSBridge) GetDeviceInfo() (goadsinterface.AdsDeviceInfo, error) {
+	var data goadsinterface.AdsDeviceInfo
+	err := b.Get("/device/info", &data)
+	return data, err
 }
 
-func (b ADSBridge) GetSymbolInfo(name string) (map[string]interface{}, error) {
-	return b.Get("/getSymbolInfo/" + name)
+func (b ADSBridge) GetSymbol(name string) (goadsinterface.AdsSymbol, error) {
+	var data goadsinterface.AdsSymbol
+	err := b.Get("/symbol/"+name, &data)
+	return data, err
 }
 
-func (b ADSBridge) GetSymbolValue(name string) (map[string]interface{}, error) {
-	return b.Get("/getSymbolValue/" + name)
+func (b ADSBridge) GetSymbolInfo() (goadsinterface.AdsSymbolInfo, error) {
+	var data goadsinterface.AdsSymbolInfo
+	err := b.Get("/symbol", &data)
+	return data, err
 }
 
-func (b ADSBridge) ListSymbols() (map[string]interface{}, error) {
-	return b.Get("/symbolList")
+func (b ADSBridge) GetSymbolValue(name string) (goadsinterface.AdsData, error) {
+	var data goadsinterface.AdsData
+	err := b.Get("/symbol/"+name+"/value", &data)
+	return data, err
 }
 
-func (b ADSBridge) SetSymbolValue(name string, value any) (map[string]interface{}, error) {
-	jsonValue, err := json.Marshal(value)
+func (b ADSBridge) GetSymbolList() (goadsinterface.AdsSymbolList, error) {
+	var data goadsinterface.AdsSymbolInfo
+	err := b.Get("/symbol", &data)
 	if err != nil {
 		return nil, err
 	}
-	return b.Post("/setSymbolValue/"+name, "{\"data\":"+string(jsonValue)+"}")
+	symbols := make([]string, len(data))
+	i := 0
+	for k := range data {
+		symbols[i] = k
+		i++
+	}
+	return symbols, err
 }
 
-func (b ADSBridge) WriteControl(adsState uint16, deviceState uint16) (map[string]interface{}, error) {
-	if adsState != 0 {
-		if deviceState != 0 {
-			return b.Post("/writeControl", "{\"adsState\":"+fmt.Sprint(adsState)+","+"\"deviceState\":"+fmt.Sprint(deviceState)+"}")
-		} else {
-			return b.Post("/writeControl", "{\"adsState\":"+fmt.Sprint(adsState)+"}")
-		}
-	} else if deviceState != 0 {
-		return b.Post("/writeControl", "{\"deviceState\":"+fmt.Sprint(deviceState)+"}")
+func (b ADSBridge) SetState(state goadsinterface.AdsState) (goadsinterface.AdsState, error) {
+	jsonStr, err := json.Marshal(state)
+	if err != nil {
+		return state, err
 	}
-	return b.Post("/writeControl", "{}")
+	var data goadsinterface.AdsState
+	err = b.Post("/state", string(jsonStr), &data)
+	return data, err
+}
+
+func (b ADSBridge) SetSymbolValue(name string, value goadsinterface.AdsData) (goadsinterface.AdsData, error) {
+	jsonStr, err := json.Marshal(value)
+	if err != nil {
+		return value, err
+	}
+	var data goadsinterface.AdsData
+	err = b.Post("/symbol/"+name+"/value", string(jsonStr), &data)
+	return data, err
 }
