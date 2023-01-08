@@ -15,9 +15,8 @@ type ADSBridge struct {
 }
 
 // Creates instance of type ADSBridge with given address and checks connection, returns ADSBridge and error if connection fails.
-func Connect(addr string) (ADSBridge, error) {
-	var b ADSBridge
-	b.addr = addr
+func Connect(addr string) (*ADSBridge, error) {
+	b := &ADSBridge{addr: addr}
 	_, err := b.GetVersion()
 	if err != nil {
 		return b, err
